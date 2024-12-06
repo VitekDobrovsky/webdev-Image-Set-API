@@ -1,6 +1,6 @@
 # Get a set of images for web development
 
-Upload 1 image and you will receive a set of images in png/jpg, webp, and in multiple sizes for needed devices (mobile, tablet, desktop)
+Upload 1 image and you will receive a set of images in png/jpg, webp, and in multiple sizes for needed devices (mobile, tablet, desktop).
 <br>
 
 ### Installation
@@ -22,10 +22,10 @@ python3 start.py
 Click on "Try it out"
 <img src="images/step-one.png">
 
-Provide required information
+Provide required information (leave "name" empty if you want to keep the same name as input file)
 <img src="images/step-two.png">
 
-Download the file or see the errors under "400" code.
+Download the zip file or see the errors under "400" code.
 <img src="images/step-three.png">
 
 <br>

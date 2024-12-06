@@ -29,7 +29,7 @@ async def generate_image_set(max_width: int, file: UploadFile = File(...), name:
         name = name if name != "" else os.path.splitext(file.filename)[0]
 
         if os.path.splitext(file.filename)[1] == ".png" and not transparent:
-            raise HTTPException(status_code=400, detail="PNG images are not supported for this operation.")
+            raise HTTPException(status_code=400, detail="PNG is a transparent image format. Set 'transparent' to True to generate PNG images.")
 
         formats = ["png" if transparent else "jpeg", "webp"]
         _sizes = [size for size in sizes.values() if size < max_width]
