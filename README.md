@@ -29,7 +29,7 @@ start the server:
 uvicorn main:app --reload
 ```
 
-make a request:
+send a request:
 
 ```bash
 curl -X 'POST' \
