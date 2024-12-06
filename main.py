@@ -8,6 +8,14 @@ app = FastAPI()
 output_dir = "output"
 os.makedirs(output_dir, exist_ok=True)
 
+sizes = {
+        "small": 420,
+        "medium": 960,
+        "large": 1500,
+        "extra_large": 1920
+}
+
+
 @app.post("/resize/")
 async def resize_image(width: int, height: int, file: UploadFile = File(...)):
     """
@@ -37,8 +45,8 @@ async def convert_image(format: str, file: UploadFile = File(...)):
     try:
         # Validate the format
         format = format.lower()
-        if format not in ["png", "jpg", "jpeg", "webp"]:
-            raise HTTPException(status_code=400, detail="Unsupported format. Use png, jpg, or webp.")
+        if format not in ["png", "jpg", "jpeg", "webp", "avif"]:
+            raise HTTPException(status_code=400, detail="Unsupported format. Use png, jpg, avif, or webp.")
 
         # Open the uploaded image
         img = Image.open(file.file)
@@ -51,3 +59,39 @@ async def convert_image(format: str, file: UploadFile = File(...)):
         return FileResponse(output_path, media_type=f"image/{format}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing image: {e}")
+
+
+@app.post("/generate-image-set/")
+async def generate_image_set(file: UploadFile = File(...), transparent:boolean = False, stretch: boolean = False, max_size: int = 1920):
+    """
+    Generate a set of images with different sizes from the uploaded image.
+    """
+    try:
+        # Open the uploaded image
+        img = Image.open(file.file)
+
+        formats = ["png" if transparent else "jpeg", "webp", "avif"]
+        sizes = [size for size in sizes.values() if size < max_size]
+        sizes.append(max_size)
+
+        # Generate and save images for each size
+        image_set = {}
+        for size in sizes:
+            for format in formats:
+                if max_size >= size:
+                    img_resized = img.resize((size, size)) if stretch else img.thumbnail((size, image.height))
+                    output_filename = f"{size}x{size}_{os.path.splitext(file.filename)[0]}.{format}"
+                    output_path = os.path.join(output_dir, output_filename)
+                    img_resized.save(output_path)
+                    image_set[f"{size}_{format}"] = output_filename
+
+        return image_set
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing image: {e}")
+
+@app.get("/get-sizes/")
+async def get_sizes():
+    """
+    Get the available sizes for the image set.
+    """
+    return sizes
