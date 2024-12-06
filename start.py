@@ -1,5 +1,4 @@
 import os
-import time
 import webbrowser
 import subprocess
 import platform
@@ -13,7 +12,6 @@ def start_server():
 
 def open_browser():
     # Wait for the server to start
-    time.sleep(5)
     # Open the URL in the default browser
     webbrowser.open("http://127.0.0.1:8000/docs#/default/generate_image_set_generate_image_set__post")
 

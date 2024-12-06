@@ -19,6 +19,15 @@ to start <b>GUI</b>, run:
 python3 start.py
 ```
 
+Click on "Try it out"
+<img src="images/step-one.png">
+
+Provide required information
+<img src="images/step-two.png">
+
+Download the file or see the errors under "400" code.
+<img src="images/step-three.png">
+
 <br>
 
 ### Example curl request:
