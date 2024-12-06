@@ -1,6 +1,7 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from PIL import Image
+import zipfile
 import os
 
 app = FastAPI()
@@ -11,9 +12,13 @@ os.makedirs(output_dir, exist_ok=True)
 sizes = {
         "small": 420,
         "medium": 960,
-        "large": 1500,
         "extra_large": 1920
 }
+
+def compress_images(zip_filename: str, image_files: list):
+    with zipfile.ZipFile(zip_filename, "w") as zip:
+        for image_file in image_files:
+            zip.write(image_file, os.path.basename(image_file))
 
 
 @app.post("/resize/")
@@ -45,8 +50,8 @@ async def convert_image(format: str, file: UploadFile = File(...)):
     try:
         # Validate the format
         format = format.lower()
-        if format not in ["png", "jpg", "jpeg", "webp", "avif"]:
-            raise HTTPException(status_code=400, detail="Unsupported format. Use png, jpg, avif, or webp.")
+        if format not in ["png", "jpg", "jpeg", "webp"]:
+            raise HTTPException(status_code=400, detail="Unsupported format. Use png, jpg, or webp.")
 
         # Open the uploaded image
         img = Image.open(file.file)
@@ -62,30 +67,44 @@ async def convert_image(format: str, file: UploadFile = File(...)):
 
 
 @app.post("/generate-image-set/")
-async def generate_image_set(file: UploadFile = File(...), transparent:boolean = False, stretch: boolean = False, max_size: int = 1920):
+async def generate_image_set(file: UploadFile = File(...), name:str = "Same as ipnut filename", transparent: bool = False, max_width: int = 1920):
     """
     Generate a set of images with different sizes from the uploaded image.
     """
     try:
         # Open the uploaded image
         img = Image.open(file.file)
+        name = name if name != "Same as ipnut filename" else os.path.splitext(file.filename)[0]
 
-        formats = ["png" if transparent else "jpeg", "webp", "avif"]
-        sizes = [size for size in sizes.values() if size < max_size]
-        sizes.append(max_size)
+        if os.path.splitext(file.filename)[1] == ".png" and not transparent:
+            raise HTTPException(status_code=400, detail="PNG images are not supported for this operation.")
+
+        formats = ["png" if transparent else "jpg", "webp"]
+        _sizes = [size for size in sizes.values() if size < max_width]
+        _sizes.append(max_width)
 
         # Generate and save images for each size
-        image_set = {}
-        for size in sizes:
+        image_set = []
+        for size in _sizes:
             for format in formats:
-                if max_size >= size:
-                    img_resized = img.resize((size, size)) if stretch else img.thumbnail((size, image.height))
+                if max_width >= size:
+                    img_resized = img.resize((size, int(size * img.height / img.width)))
+                    
+                    # Convert RGBA to RGB if saving as JPEG
+                    if format in ["jpg", "jpeg"] and img_resized.mode == 'RGBA':
+                        img_resized = img_resized.convert('RGB')
+                    
                     output_filename = f"{size}x{size}_{os.path.splitext(file.filename)[0]}.{format}"
                     output_path = os.path.join(output_dir, output_filename)
                     img_resized.save(output_path)
-                    image_set[f"{size}_{format}"] = output_filename
+                    image_set.append(output_filename)
+        
+        # Compress the images into a zip file
+        zip_filename = os.path.join(output_dir, "image_set.zip")
+        compress_images(zip_filename, [os.path.join(output_dir, image) for image in image_set])
 
-        return image_set
+
+        return FileResponse(zip_filename, media_type="application/zip", filename="image_set.zip")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing image: {e}")
 
