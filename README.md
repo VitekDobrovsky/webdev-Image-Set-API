@@ -6,13 +6,13 @@ Upload 1 image and you will receive a set of images in png/jpg, webp, and in mul
 ### Installation
 
 ```bash
-pip install fastapi uvicorn pillow
+pip install -r requirements.txt
 ```
 
 if this doesn't work, try:
 
 ```bash
-pip3 install fastapi uvicorn pillow
+pip3 install -r requirements.txt
 ```
 
 <br>
