@@ -1,25 +1,17 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 from PIL import Image
 import zipfile
 import os
-from io import BytesIO
+import io
 
 app = FastAPI()
-
-output_dir = "output"
-os.makedirs(output_dir, exist_ok=True)
 
 sizes = {
         "small": 420,
         "medium": 960,
         "extra_large": 1920
 }
-
-def compress_images(zip_filename: str, image_files: list):
-    with zipfile.ZipFile(zip_filename, "w") as zip:
-        for image_file in image_files:
-            zip.write(image_file, os.path.basename(image_file))
 
 @app.get("/")
 async def read_root():
@@ -38,7 +30,7 @@ async def generate_image_set(file: UploadFile = File(...), name:str = "Same as i
         if os.path.splitext(file.filename)[1] == ".png" and not transparent:
             raise HTTPException(status_code=400, detail="PNG images are not supported for this operation.")
 
-        formats = ["png" if transparent else "jpg", "webp"]
+        formats = ["png" if transparent else "jpeg", "webp"]
         _sizes = [size for size in sizes.values() if size < max_width]
         _sizes.append(max_width)
 
@@ -54,16 +46,19 @@ async def generate_image_set(file: UploadFile = File(...), name:str = "Same as i
                         img_resized = img_resized.convert('RGB')
                     
                     output_filename = f"{name}-{size}x{size}.{format}"
-                    output_path = os.path.join(output_dir, output_filename)
-                    img_resized.save(output_path)
-                    image_set.append(output_filename)
+                    img_byte_arr = io.BytesIO()
+                    img_resized.save(img_byte_arr, format=format.upper() if format != "jpeg" else "JPEG")
+                    img_byte_arr.seek(0)
+                    image_set.append((output_filename, img_byte_arr))
         
-        # Compress the images into a zip file
-        zip_filename = os.path.join(output_dir, "image_set.zip")
-        compress_images(zip_filename, [os.path.join(output_dir, image) for image in image_set])
+        # Compress the images into a zip file in memory
+        zip_byte_arr = io.BytesIO()
+        with zipfile.ZipFile(zip_byte_arr, "w") as zip:
+            for filename, img_byte_arr in image_set:
+                zip.writestr(filename, img_byte_arr.read())
+        zip_byte_arr.seek(0)
 
-
-        return FileResponse(zip_filename, media_type="application/zip", filename="image_set.zip")
+        return StreamingResponse(zip_byte_arr, media_type="application/zip", headers={"Content-Disposition": "attachment; filename=image_set.zip"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing image: {e}")
 
