@@ -18,14 +18,15 @@ async def read_root():
     return {"message": "Welcome to the Image Set Generator API"}
 
 @app.post("/generate-image-set/")
-async def generate_image_set(file: UploadFile = File(...), name:str = "Same as ipnut filename", transparent: bool = False, max_width: int = 1920):
+async def generate_image_set(max_width: int, file: UploadFile = File(...), name:str = "", transparent: bool = False):
     """
-    Generate a set of images with different sizes from the uploaded image.
+    Generate a set of images with different sizes from the uploaded image. 
+    LEAVE THE NAME EMPTY IF YOU WANT TO KEEP THE SAME NAME AS THE UPLOADED FILE.
     """
     try:
         # Open the uploaded image
         img = Image.open(file.file)
-        name = name if name != "Same as ipnut filename" else os.path.splitext(file.filename)[0]
+        name = name if name != "" else os.path.splitext(file.filename)[0]
 
         if os.path.splitext(file.filename)[1] == ".png" and not transparent:
             raise HTTPException(status_code=400, detail="PNG images are not supported for this operation.")
