@@ -29,6 +29,8 @@ start the server:
 uvicorn main:app --reload
 ```
 
+make a request:
+
 ```bash
 curl -X 'POST' \
   'http://127.0.0.1:8000/generate-image-set/?max_width=600&name=my-image&transparent=true' \
