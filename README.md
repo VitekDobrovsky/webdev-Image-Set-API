@@ -6,12 +6,6 @@ Upload 1 image and you will receive a set of images in png/jpg, webp, and in mul
 ### Installation
 
 ```bash
-pip install -r requirements.txt
-```
-
-if this doesn't work, try:
-
-```bash
 pip3 install -r requirements.txt
 ```
 
@@ -19,17 +13,22 @@ pip3 install -r requirements.txt
 
 ### Usage
 
-run
+<b>GUI</b>
+run:
 
 ```bash
-uvicorn main:app --reload
+python3 start.py
 ```
-
-and go to: http://127.0.0.1:8000/docs#/default/generate_image_set_generate_image_set__post
 
 <br>
 
 ### Example curl request:
+
+start the server:
+
+```bash
+uvicorn main:app --reload
+```
 
 ```bash
 curl -X 'POST' \
