@@ -1,6 +1,6 @@
-# Get a set of images for web development
+# Generate a Set of Images for Web Development
 
-Upload 1 image and you will receive a set of images in png/jpg, webp, and in multiple sizes for needed devices (mobile, tablet, desktop).
+Upload an image to receive a set of images in PNG/JPG, WebP formats, and in multiple sizes suitable for various devices (mobile, tablet, desktop).
 <br>
 
 ### Installation
