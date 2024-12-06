@@ -13,8 +13,7 @@ pip3 install -r requirements.txt
 
 ### Usage
 
-<b>GUI</b>
-run:
+to start <b>GUI</b>, run:
 
 ```bash
 python3 start.py
