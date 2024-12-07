@@ -13,12 +13,14 @@ sizes = {
         "extra_large": 1920
 }
 
+minimmum_step_size = 300
+
 @app.get("/")
 async def read_root():
     return {"message": "Welcome to the Image Set Generator API"}
 
 @app.post("/generate-image-set/")
-async def generate_image_set(max_width: int, file: UploadFile = File(...), name:str = "", transparent: bool = False):
+async def generate_image_set(max_width: int, file: UploadFile = File(...), name:str = "", transparent: bool = False, non_transparent_png: bool = False):
     """
     Generate a set of images with different sizes from the uploaded image. 
     LEAVE THE NAME EMPTY IF YOU WANT TO KEEP THE SAME NAME AS THE UPLOADED FILE.
@@ -28,11 +30,8 @@ async def generate_image_set(max_width: int, file: UploadFile = File(...), name:
         img = Image.open(file.file)
         name = name if name != "" else os.path.splitext(file.filename)[0]
 
-        if os.path.splitext(file.filename)[1] == ".png" and not transparent:
-            raise HTTPException(status_code=400, detail="PNG is a transparent image format. Set 'transparent' to True to generate PNG images.")
-
         formats = ["png" if transparent else "jpeg", "webp"]
-        _sizes = [size for size in sizes.values() if size < max_width]
+        _sizes = [size for size in sizes.values() if size < (max_width - minimmum_step_size)]
         _sizes.append(max_width)
 
         # Generate and save images for each size

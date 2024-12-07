@@ -25,7 +25,7 @@ Click on "Try it out"
 Provide required information (leave "name" empty if you want to keep the same name as input file)
 <img src="images/step-two.png">
 
-Download the zip file or see the errors under "400" code.
+Download the zip file or see the errors under "500" code.
 <img src="images/step-three.png">
 
 <br>
