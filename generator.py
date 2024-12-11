@@ -5,7 +5,7 @@ import io
 import os
 
 class Image_generator:
-    def __init__(self, transparent: bool, responsive: bool, max_width: int, generate_HTML: bool = True, generate_CSS: bool = True):
+    def __init__(self, transparent: bool, responsive: bool, max_width: int, generate_HTML: bool = True, alt="", generate_CSS: bool = True):
         
         # sizes
         self.sizes = {
@@ -25,6 +25,7 @@ class Image_generator:
         self.html_sources = self.initialize_HTML_sources(self.available_formats)
         self.names = []
         self.allow_HTML_generation = generate_HTML
+        self.alt = alt
 
         # generate css
         self.allow_CSS_generation = generate_CSS
@@ -73,7 +74,7 @@ class Image_generator:
         )
 
         # Generate the img tag with the largest image and sizes attribute
-        html += f'<img src="{largest_image}" alt="Autoservis" sizes="{self.sizes}">'
+        html += f'<img src="{largest_image}" alt="{self.alt}" sizes="{self.sizes}">'
         html += "</picture>"
         
 
@@ -91,10 +92,24 @@ class Image_generator:
             html += f'<source srcset="{name}" type="image/{format}">'
         
         # Generate the img tag with the first (largest) image in the list
-        html += f'<img src="{names[0]}" alt="Autoservis" width={width} height={height}>'
+        html += f'<img src="{names[0]}" alt="{self.alt}" width={width} height={height}>'
 
         html += "</picture>"
         return html
+
+    def generate_simple_CSS(self, names: list) -> str:
+        """
+        Generate Css for background images
+        """
+        css = ".element { background-image: "
+
+        for i, name in enumerate(names):
+            separator = ", " if i < len(names) - 1 else ";"               
+            css += f"url('{name}')" + separator
+            
+        css += "}"
+        return css  
+
 
     def get_sizes(self, max_width: int, available_sizes: dict, min_step_size, responsive: bool) -> list:
         """
@@ -106,7 +121,7 @@ class Image_generator:
         sizes.append(max_width)
         return sizes
     
-    def generate_zip(self, image_set: list, html: str, generate_HTML: bool = True, generate_CSS: bool = True):
+    def generate_zip(self, image_set: list, html: str, css: str, generate_HTML: bool = True, generate_CSS: bool = True):
         """
         Compress the images into a zip file in memory
         """
@@ -117,6 +132,8 @@ class Image_generator:
                 zip.writestr(filename, img_byte_arr.read())
             if generate_HTML:
                 zip.writestr("index.html", html)
+            if generate_CSS:
+                zip.writestr("styles.css", css)
         
         zip_byte_arr.seek(0)
         return zip_byte_arr
@@ -155,14 +172,17 @@ class Image_generator:
                 else:
                     self.names.append(output_filename)
                 
-            # generate HTML sources
-            if self.responsive:
-                html = self.generate_HTML(self.available_formats, self.html_sources)
-            else:
-                html = self.generate_simple_HTML(self.names, size, img_resized.height)
+        # generate HTML and CSS
+        if self.responsive:
+            html = self.generate_HTML(self.available_formats, self.html_sources)
+        else:
+            html = self.generate_simple_HTML(self.names, size, img_resized.height)
+            css = self.generate_simple_CSS(self.names)
+
+            
 
         
         # generate zip file
-        zip_byte_arr = self.generate_zip(image_set, html, self.allow_HTML_generation, self.allow_CSS_generation)
+        zip_byte_arr = self.generate_zip(image_set, html, css, self.allow_HTML_generation, self.allow_CSS_generation)
 
         return zip_byte_arr
