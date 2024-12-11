@@ -97,6 +97,36 @@ class Image_generator:
         html += "</picture>"
         return html
 
+    def generate_CSS(self, names: list, sizes) -> str:
+        """
+        Generate Css for background images with media queries
+        """
+
+        # get the largest image across all formats
+        filtered_formats = [name for name in names if name.split('.')[1] != "webp"]
+        largest_image = max(
+            filtered_formats,
+            key=lambda x: int(x.split('-')[1].split('.')[0])
+        )
+
+
+        #{
+        #    "1400": ["image-1400.jpg", "image-1400.webp"],
+        #}
+
+        image_sets = {
+        }
+
+        for size in sizes:
+            image_sets[size] = [name for name in names if int(name.split('-')[1].split('.')[0]) == size]
+
+        css = f".element {{ background-image: url('{largest_image}'); }}"
+
+        for size in image_sets.keys():
+            css += f"@media (max-width: {size}px) {{ {self.generate_simple_CSS(image_sets[size])} }}"
+
+        return css
+
     def generate_simple_CSS(self, names: list) -> str:
         """
         Generate Css for background images
@@ -106,7 +136,7 @@ class Image_generator:
         for i, name in enumerate(names):
             separator = ", " if i < len(names) - 1 else ";"               
             css += f"url('{name}')" + separator
-            
+        
         css += "}"
         return css  
 
@@ -169,12 +199,13 @@ class Image_generator:
                 # generate HTML sources
                 if self.responsive:
                     self.html_sources[format].append(f"{output_filename} {size}w")
-                else:
-                    self.names.append(output_filename)
+
+                self.names.append(output_filename)
                 
         # generate HTML and CSS
         if self.responsive:
             html = self.generate_HTML(self.available_formats, self.html_sources)
+            css = self.generate_CSS(self.names, sizes)
         else:
             html = self.generate_simple_HTML(self.names, size, img_resized.height)
             css = self.generate_simple_CSS(self.names)
