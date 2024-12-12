@@ -14,7 +14,8 @@ async def read_root():
 @app.post("/generate/")
 async def generate_image_set(max_width: int, image: UploadFile = File(...), image_name: str = "", multiple_sizes: bool = True, transparent: bool = False, generate_HTML: bool = True, alt:str = "", generate_CSS: bool = True):
     """
-    Generate a set of images with different sizes and formats from the uploaded image.
+    Generate a set of images with different sizes and formats from the uploaded image. \n
+    NOT RECOMMENDED FOR IMAGE UPSCALING!!!
     """
     try:
         zip = Image_generator(transparent, multiple_sizes, max_width, generate_HTML, alt, generate_CSS).generate_image_set(image, image_name)
