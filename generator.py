@@ -16,6 +16,7 @@ class Image_generator:
         self.max_width = max_width
         self.minimmum_step_size = 300
         self.responsive = responsive
+        self.all_sizes = self.get_sizes(self.max_width, self.sizes, self.minimmum_step_size, self.responsive)
 
         # format converting
         self.transparent = transparent
@@ -59,40 +60,43 @@ class Image_generator:
             html += f'<source srcset="{srcset}" type="image/{format}">'
 
         # Find the largest image across all formats for the img src attribute
-        largest_image = max(
-            html_sources[available_formats[0]],
-            key=lambda x: int(x.split('-')[1].split('.')[0])
-        ).split(' ')[0]
+        try:
+            largest_image = max(
+                html_sources[available_formats[0]],
+                key=lambda x: int(x.split('-')[1].split('.')[0])
+            ).split(' ')[0]
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Please dont use - or . in the filename!")
 
         # Generate sizes attribute based on the available sizes in html_sources
-        self.sizes = ", ".join(
-            f"(max-width: {int(img.split('-')[1].split('.')[0])}px) {int(img.split('-')[1].split('.')[0])}px"
-            for img in sorted(
-                {img for imgs in html_sources.values() for img in imgs},
-                key=lambda x: int(x.split('-')[1].split('.')[0])
-            )
-        )
+        css_sizes = ""
+
+        for size in self.all_sizes:
+            separator = ", " if size != self.all_sizes[-1] else ""
+            css_sizes += f"(max-width: {size}px) {size}px" + separator
 
         # Generate the img tag with the largest image and sizes attribute
-        html += f'<img src="{largest_image}" alt="{self.alt}" sizes="{self.sizes}">'
+        html += f'<img src="{largest_image}" alt="{self.alt}" sizes="{css_sizes}">'
         html += "</picture>"
         
-
         return html
     
     def generate_simple_HTML(self, names: list, width: int, height: int) -> str:
         """
         Generate a simple HTML picture element with a single source element for each format and an img tag
         """
-        html = "<picture>"
+        html = "<picture>" 
 
+        base_image = names[0]
+        
         # Generate a single source element for each format
-        for name in names:
-            format = name.split('.')[0]
-            html += f'<source srcset="{name}" type="image/{format}">'
+        for name in reversed(names):
+            if name != names[0]:
+                format = name.split('.')[1]
+                html += f'<source srcset="{name}" type="image/{format}">'
         
         # Generate the img tag with the first (largest) image in the list
-        html += f'<img src="{names[0]}" alt="{self.alt}" width={width} height={height}>'
+        html += f'<img src="{base_image}" alt="{self.alt}" width={width} height={height}>'
 
         html += "</picture>"
         return html
@@ -103,16 +107,14 @@ class Image_generator:
         """
 
         # get the largest image across all formats
-        filtered_formats = [name for name in names if name.split('.')[1] != "webp"]
-        largest_image = max(
-            filtered_formats,
-            key=lambda x: int(x.split('-')[1].split('.')[0])
-        )
-
-
-        #{
-        #    "1400": ["image-1400.jpg", "image-1400.webp"],
-        #}
+        try:
+            filtered_formats = [name for name in names if name.split('.')[1] != "webp"]
+            largest_image = max(
+                filtered_formats,
+                key=lambda x: int(x.split('-')[1].split('.')[0])
+            )
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Please dont use \"-\" or \".\" in the filename!")
 
         image_sets = {
         }
@@ -133,13 +135,12 @@ class Image_generator:
         """
         css = ".element { background-image: "
 
-        for i, name in enumerate(names):
+        for i, name in enumerate(reversed(names)):
             separator = ", " if i < len(names) - 1 else ";"               
             css += f"url('{name}')" + separator
         
         css += "}"
         return css  
-
 
     def get_sizes(self, max_width: int, available_sizes: dict, min_step_size, responsive: bool) -> list:
         """
@@ -170,22 +171,23 @@ class Image_generator:
 
     def generate_image_set(self, file: UploadFile = File(...), name:str = "") -> list:
         """
-        Generate a set of images with different sizes and formats from the uploaded image. 
+        Generate a set of images with different sizes and formats from the uploaded image. \n
+        NOT RECOMMENDED FOR IMAGE UPSCALING 
         """
         # set the name of the file (same as input filename if not provided)
         name = name if name != "" else os.path.splitext(file.filename)[0]
         img = Image.open(file.file)
-        sizes = self.get_sizes(self.max_width, self.sizes, self.minimmum_step_size, self.responsive)
+        
         
         image_set = []
 
         # create a list of images with different sizes and formats
-        for size in sizes:
+        for size in self.all_sizes:
             for format in self.available_formats:
                 img_resized = img.resize((size, int(size * img.height / img.width)))
-                    
+                
                 # Convert RGBA to RGB if saving as JPEG
-                if format in ["jpg", "jpeg"] and img_resized.mode == 'RGBA':
+                if format.lower() in ["jpg", "jpeg"] and img_resized.mode == 'RGBA':
                     img_resized = img_resized.convert('RGB')
                 
                 output_filename = f"{name}-{size}.{format}"
@@ -197,18 +199,18 @@ class Image_generator:
                 image_set.append((output_filename, img_byte_arr))
 
                 # generate HTML sources
-                if self.responsive:
+                if len(self.all_sizes) > 1:
                     self.html_sources[format].append(f"{output_filename} {size}w")
 
                 self.names.append(output_filename)
                 
         # generate HTML and CSS
-        if self.responsive:
-            html = self.generate_HTML(self.available_formats, self.html_sources)
-            css = self.generate_CSS(self.names, sizes)
-        else:
-            html = self.generate_simple_HTML(self.names, size, img_resized.height)
-            css = self.generate_simple_CSS(self.names)
+        if len(self.all_sizes) > 1:
+            html = self.generate_HTML(self.available_formats, self.html_sources) if self.allow_HTML_generation else ""
+            css = self.generate_CSS(self.names, self.all_sizes) if self.allow_CSS_generation else ""
+        elif len(self.all_sizes) == 1:
+            html = self.generate_simple_HTML(self.names, size, img_resized.height) if self.allow_HTML_generation else ""
+            css = self.generate_simple_CSS(self.names) if self.allow_CSS_generation else ""
 
             
 
