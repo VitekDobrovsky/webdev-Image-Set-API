@@ -13,7 +13,7 @@ def start_server():
 def open_browser():
     # Wait for the server to start
     # Open the URL in the default browser
-    webbrowser.open("http://127.0.0.1:8000/docs#/default/generate_image_set_generate_image_set__post")
+    webbrowser.open("http://127.0.0.1:8000/docs#/default/generate_image_set_generate__post")
 
 if __name__ == "__main__":
     start_server()
