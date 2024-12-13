@@ -18,14 +18,21 @@ to start <b>GUI</b>, run:
 ```bash
 python3 start.py
 ```
+or
+```bash
+python start.py
+```
 
 Click on "Try it out"
+
 <img src="images/step-one.png">
 
 Provide required information (leave "name" empty if you want to keep the same name as input file)
+
 <img src="images/step-two.png">
 
 Download the zip file or see the errors under "500" code.
+
 <img src="images/step-three.png">
 
 <br>
