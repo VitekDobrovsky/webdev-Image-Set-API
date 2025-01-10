@@ -57,7 +57,7 @@ class Image_generator:
         # Generate srcset attributes for each format in reverse order (to prioritize the last format)
         for format, sources in reversed(html_sources.items()):
             srcset = ", ".join(sources)
-            html += f'<source srcset="{srcset}" type="image/{format}">'
+            html += f'<source srcset={srcset}" type="image/{format}">'
 
         # Find the largest image across all formats for the img src attribute
         try:
