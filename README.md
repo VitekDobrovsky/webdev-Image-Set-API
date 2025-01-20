@@ -8,6 +8,10 @@ Upload an image to receive a set of images in PNG/JPG, WebP formats, and in mult
 ```bash
 pip3 install -r requirements.txt
 ```
+or
+```bash
+pip install -r requirements.txt
+```
 
 <br>
 
